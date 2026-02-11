@@ -169,6 +169,28 @@ function dequeuefromBuyBook(){
     return orderObj;
 }
 
+function matchOrders(){
+    while (sellBook.length != 0 && buyBook.length != 0 && buyBook[0].value >= sellBook[0].value){
+        let sellOrder = dequeuefromSellBook();
+        let buyOrder = dequeuefromBuyBook(); 
+        // fetch UserIDs from the orders and update in the database
+        console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
+    }
+    console.log(`Current Market Value is: ${fetchCurrentMarketValue(150.23,200.48)}`);
+}
+
+function fetchCurrentMarketValue(upperCircuit, lowerCircuit){
+    if (sellBook[0].value <= buyBook[0].value){
+        return sellBook[0].value;
+    } else if (sellBook[0].value > buyBook[0].value){
+        return buyBook[0].value;
+    } else if (sellBook.length == 0){
+        return upperCircuit;
+    } else if ((sellBook.length == 0 && buyBook.length == 0) || buyBook.length == 0){
+        return lowerCircuit;
+    }
+}
+
 enqueueSellOrder("JSW", 148.55, 5, Date.now(), sellBook.length-1);
 enqueueSellOrder("JSW", 148.70, 3, Date.now(), sellBook.length-1);
 enqueueBuyOrder("JSW", 148.35, 1, Date.now(), buyBook.length-1);
@@ -177,13 +199,14 @@ enqueueSellOrder("JSW", 148.35, 10, Date.now(), sellBook.length-1);
 enqueueSellOrder("JSW", 148.15, 13, Date.now(), sellBook.length-1);
 enqueueBuyOrder("JSW", 148.38, 5, Date.now(), buyBook.length-1);
 enqueueSellOrder("JSW", 148.85, 28, Date.now(), sellBook.length-1);
+matchOrders();
 
-console.log("sellBook");
+console.log("-------------sellBook---------------");
 for (let i=0; i<sellBook.length; i++){
     console.log(sellBook[i]);
 }
 
-console.log("buyBook");
+console.log("-------------buyBook----------------");
 for (let i=0; i<buyBook.length; i++){
     console.log(buyBook[i]);
 }
