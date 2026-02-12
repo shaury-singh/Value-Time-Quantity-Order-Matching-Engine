@@ -1,10 +1,13 @@
+import {addOrderIntoDatabase} from "./database.js";
+
 let sellBook = [];
 let buyBook = [];
 
-function enqueueSellOrder(shareName, value, qty, time, currIdx){
+async function enqueueSellOrder(shareName, value, qty, time, currIdx){
     if (currIdx == sellBook.length-1){
         sellBook.push({shareName,value,time,qty});
         currIdx = sellBook.length - 1;
+        await addOrderIntoDatabase("sell",value,qty,"JSW","Shaury Singh");
     }
     let parentIdx = Math.floor((currIdx-1)/2); 
     if (currIdx > 0){
@@ -29,10 +32,11 @@ function enqueueSellOrder(shareName, value, qty, time, currIdx){
     }
 }
 
-function enqueueBuyOrder(shareName, value, qty, time, currIdx){
+async function enqueueBuyOrder(shareName, value, qty, time, currIdx){
     if (currIdx == buyBook.length-1){
         buyBook.push({shareName,value,time,qty});
         currIdx = buyBook.length - 1;
+        await addOrderIntoDatabase("buy",value,qty,"JSW","Vedant Ere");
     }
     let parentIdx = Math.floor((currIdx-1)/2); 
     if (currIdx > 0){
