@@ -208,5 +208,4 @@ async function runEngine() {
     console.log("------------- BUY BOOK ----------------");
     console.log(engine.buyBook[shareIndex]);
 }
-
 runEngine();
