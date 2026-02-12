@@ -171,23 +171,37 @@ function dequeuefromBuyBook(){
 
 function matchOrders(){
     while (sellBook.length != 0 && buyBook.length != 0 && buyBook[0].value >= sellBook[0].value){
-        let sellOrder = dequeuefromSellBook();
-        let buyOrder = dequeuefromBuyBook(); 
+        let qty = sellBook[0].qty - buyBook[0].qty;
+        if (qty > 0){
+            let buyOrder = dequeuefromBuyBook(); 
+            sellBook[0].qty = qty;
+            console.log(`${JSON.stringify(sellBook[0])} matched to ${JSON.stringify(buyOrder)}`);
+        } else if (qty == 0) {
+            let sellOrder = dequeuefromSellBook();
+            let buyOrder = dequeuefromBuyBook(); 
+            console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
+        } else {
+            let sellOrder = dequeuefromSellBook();
+            buyBook[0].qty = (qty*-1);
+            console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyBook[0])}`);
+        }
         // fetch UserIDs from the orders and update in the database
-        console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
     }
-    console.log(`Current Market Value is: ${fetchCurrentMarketValue(150.23,200.48)}`);
+    console.log(`Current Market Value is: ${JSON.stringify(fetchCurrentMarketValue(150.23,200.48))}`);
 }
 
 function fetchCurrentMarketValue(upperCircuit, lowerCircuit){
-    if (sellBook[0].value <= buyBook[0].value){
-        return sellBook[0].value;
-    } else if (sellBook[0].value > buyBook[0].value){
-        return buyBook[0].value;
-    } else if (sellBook.length == 0){
-        return upperCircuit;
-    } else if ((sellBook.length == 0 && buyBook.length == 0) || buyBook.length == 0){
-        return lowerCircuit;
+    if (sellBook.length == 0){
+        if (buyBook.length == 0){
+            return {"value":lowerCircuit,"statusCode":1};
+        }
+        return {"value":upperCircuit,"statusCode":2};
+    } else if (buyBook.length == 0 ){
+        return {"value":lowerCircuit,"statusCode":4};
+    } else if (sellBook[0].value <= buyBook[0].value){
+        return {"value":sellBook[0].value,"statusCode":3};
+    } else {
+        return {"value":(sellBook[0].value + buyBook[0].value)/2,"statusCode":5};
     }
 }
 
@@ -197,7 +211,7 @@ enqueueBuyOrder("JSW", 148.35, 1, Date.now(), buyBook.length-1);
 enqueueBuyOrder("JSW", 148.40, 3, Date.now(), buyBook.length-1);
 enqueueSellOrder("JSW", 148.35, 10, Date.now(), sellBook.length-1);
 enqueueSellOrder("JSW", 148.15, 13, Date.now(), sellBook.length-1);
-enqueueBuyOrder("JSW", 148.38, 5, Date.now(), buyBook.length-1);
+enqueueBuyOrder("JSW", 148.38, 50, Date.now(), buyBook.length-1);
 enqueueSellOrder("JSW", 148.85, 28, Date.now(), sellBook.length-1);
 matchOrders();
 
