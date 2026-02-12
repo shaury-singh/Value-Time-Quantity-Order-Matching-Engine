@@ -21,8 +21,21 @@ connection.connect((err)=>{
 export async function addOrderIntoDatabase(type,price,qty,shareName,userID){
     const query = `Insert into orders (type, price, qty, shareName, userID) values (?, ?, ?, ?, ?)`;
     const values = [type,price,qty,shareName,userID];
-    connection.query(query, values, function(err,result){
-        if (err) throw err;
-        console.log("Added Sucessfully");
-    });
+    try{
+        connection.query(query, values, function(err,result){
+            if (err) throw err;
+            console.log("Added Sucessfully");
+        });
+    }catch(err){
+        console.log(err);
+    }
 };
+
+export async function addMatchedOrderIntoDatabase(price, qty, shareName, buyID, sellID){
+    const query = `Insert into MatchedOrders (matchedprice, qty, shareName, buyID, sellID) values (?, ?, ?, ?, ?)`;
+    const values = [price, qty, shareName, buyID, sellID];
+    connection.query(query,values,function(err,result){
+        if (err) throw err;
+        console.log("Matched Sucessfully");
+    })
+}

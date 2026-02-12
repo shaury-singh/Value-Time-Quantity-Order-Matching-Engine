@@ -1,4 +1,4 @@
-import {addOrderIntoDatabase} from "./database.js";
+import {addOrderIntoDatabase, addMatchedOrderIntoDatabase} from "./database.js";
 
 let sellBook = [];
 let buyBook = [];
@@ -173,18 +173,21 @@ function dequeuefromBuyBook(){
     return orderObj;
 }
 
-function matchOrders(){
+async function matchOrders(){
     while (sellBook.length != 0 && buyBook.length != 0 && buyBook[0].value >= sellBook[0].value){
         let qty = sellBook[0].qty - buyBook[0].qty;
         if (qty > 0){
+            await addMatchedOrderIntoDatabase(sellBook[0].value,Math.min(sellBook[0].qty,buyBook[0].qty),"JSW","Shaury Singh","Vedant Ere");
             let buyOrder = dequeuefromBuyBook(); 
             sellBook[0].qty = qty;
             console.log(`${JSON.stringify(sellBook[0])} matched to ${JSON.stringify(buyOrder)}`);
         } else if (qty == 0) {
+            await addMatchedOrderIntoDatabase(sellBook[0].value,sellBook[0].qty,"JSW","Shaury Singh","Vedant Ere");
             let sellOrder = dequeuefromSellBook();
             let buyOrder = dequeuefromBuyBook(); 
             console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
         } else {
+            await addMatchedOrderIntoDatabase(sellBook[0].value,Math.min(sellBook[0].qty,buyBook[0].qty),"JSW","Shaury Singh","Vedant Ere");
             let sellOrder = dequeuefromSellBook();
             buyBook[0].qty = (qty*-1);
             console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyBook[0])}`);
@@ -209,22 +212,40 @@ function fetchCurrentMarketValue(upperCircuit, lowerCircuit){
     }
 }
 
-enqueueSellOrder("JSW", 148.55, 5, Date.now(), sellBook.length-1);
-enqueueSellOrder("JSW", 148.70, 3, Date.now(), sellBook.length-1);
-enqueueBuyOrder("JSW", 148.35, 1, Date.now(), buyBook.length-1);
-enqueueBuyOrder("JSW", 148.40, 3, Date.now(), buyBook.length-1);
-enqueueSellOrder("JSW", 148.35, 10, Date.now(), sellBook.length-1);
-enqueueSellOrder("JSW", 148.15, 13, Date.now(), sellBook.length-1);
-enqueueBuyOrder("JSW", 148.38, 50, Date.now(), buyBook.length-1);
-enqueueSellOrder("JSW", 148.85, 28, Date.now(), sellBook.length-1);
-matchOrders();
+// enqueueSellOrder("JSW", 148.55, 5, Date.now(), sellBook.length-1);
+// enqueueSellOrder("JSW", 148.70, 3, Date.now(), sellBook.length-1);
+// enqueueBuyOrder("JSW", 148.35, 1, Date.now(), buyBook.length-1);
+// enqueueBuyOrder("JSW", 148.40, 3, Date.now(), buyBook.length-1);
+// enqueueSellOrder("JSW", 148.35, 10, Date.now(), sellBook.length-1);
+// enqueueSellOrder("JSW", 148.15, 13, Date.now(), sellBook.length-1);
+// enqueueBuyOrder("JSW", 148.38, 50, Date.now(), buyBook.length-1);
+// enqueueSellOrder("JSW", 148.85, 28, Date.now(), sellBook.length-1);
+// matchOrders();
 
-console.log("-------------sellBook---------------");
-for (let i=0; i<sellBook.length; i++){
-    console.log(sellBook[i]);
+// console.log("-------------sellBook---------------");
+// for (let i=0; i<sellBook.length; i++){
+//     console.log(sellBook[i]);
+// }
+
+// console.log("-------------buyBook----------------");
+// for (let i=0; i<buyBook.length; i++){
+//     console.log(buyBook[i]);
+// }
+
+async function runEngine(){
+    await enqueueSellOrder("JSW", 148.55, 5, Date.now(), sellBook.length-1);
+    await enqueueSellOrder("JSW", 148.70, 3, Date.now(), sellBook.length-1);
+    await enqueueBuyOrder("JSW", 148.35, 1, Date.now(), buyBook.length-1);
+    await enqueueBuyOrder("JSW", 148.40, 3, Date.now(), buyBook.length-1);
+    await enqueueSellOrder("JSW", 148.35, 10, Date.now(), sellBook.length-1);
+    await enqueueSellOrder("JSW", 148.15, 13, Date.now(), sellBook.length-1);
+    await enqueueBuyOrder("JSW", 148.38, 50, Date.now(), buyBook.length-1);
+    await enqueueSellOrder("JSW", 148.85, 28, Date.now(), sellBook.length-1);
+    await matchOrders();
+    console.log("-------------sellBook---------------");
+    console.log(sellBook);
+    console.log("-------------buyBook----------------");
+    console.log(buyBook);
 }
 
-console.log("-------------buyBook----------------");
-for (let i=0; i<buyBook.length; i++){
-    console.log(buyBook[i]);
-}
+runEngine();
