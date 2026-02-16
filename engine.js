@@ -4,7 +4,7 @@ class Engine {
     constructor() {
         this.sellBook = [];
         this.buyBook = [];
-        this.dbQueue = [];
+        this.dbOrderQueue = [];
     }
 
     initializeShare(shareIndex) {
@@ -17,7 +17,8 @@ class Engine {
         if (currIdx === this.sellBook[shareIndex].length - 1) {
             this.sellBook[shareIndex].push({ shareName, value, time, qty });
             currIdx = this.sellBook[shareIndex].length - 1;
-            await addOrderIntoDatabase("sell", value, qty, shareName, "Shaury Singh");
+            this.dbOrderQueue.push({"type":"sell","value":value,"qty":qty,"shareName":shareName,"shareIndex":shareIndex,"userID":"Shaury Singh"});
+            // await addOrderIntoDatabase("sell", value, qty, shareName, "Shaury Singh");
         }
         let parentIdx = Math.floor((currIdx - 1) / 2);
         if (currIdx > 0) {
@@ -50,7 +51,8 @@ class Engine {
         if (currIdx === this.buyBook[shareIndex].length - 1) {
             this.buyBook[shareIndex].push({ shareName, value, time, qty });
             currIdx = this.buyBook[shareIndex].length - 1;
-            await addOrderIntoDatabase("buy", value, qty, shareName, "Vedant Ere");
+            this.dbOrderQueue.push({"type":"sell","value":value,"qty":qty,"shareName":shareName,"shareIndex":shareIndex,"userID":"Shaury Singh"});
+            // await addOrderIntoDatabase("buy", value, qty, shareName, "Vedant Ere");
         }
         let parentIdx = Math.floor((currIdx - 1) / 2);
         if (currIdx > 0) {
@@ -225,6 +227,12 @@ class Engine {
         }
         console.log(`Current Market Value is: ${JSON.stringify(this.fetchCurrentMarketValue(150.23,200.48,shareIndex))}`);
     }
+
+    showdbQueue() {
+        for (let i=0; i<this.dbOrderQueue.length; i++){
+            console.log(JSON.stringify(this.dbOrderQueue[i]));
+        }    
+    }
 }
 
 async function runEngine() {
@@ -248,5 +256,7 @@ async function runEngine() {
     console.log(engine.sellBook[shareIndex]);
     console.log("------------- BUY BOOK ----------------");
     console.log(engine.buyBook[shareIndex]);
+    console.log("--------------DB Queue ----------------");
+    engine.showdbQueue();
 }
 runEngine();
