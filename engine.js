@@ -5,6 +5,9 @@ class Engine {
         this.sellBook = [];
         this.buyBook = [];
         this.dbOrderQueue = [];
+        this.dbMatchedQueue = [];
+        this.startDBMatchedOrderWorker();
+        this.startDBPlaceOrderWorker();
     }
 
     initializeShare(shareIndex) {
@@ -12,7 +15,7 @@ class Engine {
         if (!this.buyBook[shareIndex]) this.buyBook[shareIndex] = [];
     }
 
-    async enqueueSellOrder(shareName, value, qty, time, currIdx, orderID, shareIndex) {
+    enqueueSellOrder(shareName, value, qty, time, currIdx, orderID, shareIndex) {
         this.initializeShare(shareIndex);
         if (currIdx === this.sellBook[shareIndex].length - 1) {
             this.sellBook[shareIndex].push({ shareName, value, time, qty });
@@ -46,12 +49,12 @@ class Engine {
         }
     }
 
-    async enqueueBuyOrder(shareName, value, qty, time, currIdx, orderID, shareIndex) {
+    enqueueBuyOrder(shareName, value, qty, time, currIdx, orderID, shareIndex) {
         this.initializeShare(shareIndex);
         if (currIdx === this.buyBook[shareIndex].length - 1) {
             this.buyBook[shareIndex].push({ shareName, value, time, qty });
             currIdx = this.buyBook[shareIndex].length - 1;
-            this.dbOrderQueue.push({"type":"sell","value":value,"qty":qty,"shareName":shareName,"shareIndex":shareIndex,"userID":"Shaury Singh"});
+            this.dbOrderQueue.push({"type":"buy","value":value,"qty":qty,"shareName":shareName,"shareIndex":shareIndex,"userID":"Shaury Singh"});
             // await addOrderIntoDatabase("buy", value, qty, shareName, "Vedant Ere");
         }
         let parentIdx = Math.floor((currIdx - 1) / 2);
@@ -205,27 +208,31 @@ class Engine {
         }
     }
 
-    async matchOrders(shareIndex){
+    matchOrders(shareIndex){
         while (this.sellBook[shareIndex].length != 0 && this.buyBook[shareIndex].length != 0 && this.buyBook[shareIndex][0].value >= this.sellBook[shareIndex][0].value){
             let qty = this.sellBook[shareIndex][0].qty - this.buyBook[shareIndex][0].qty;
             if (qty > 0){
-                await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
+                this.dbMatchedQueue.push({"value":this.sellBook[shareIndex][0].value,"qty":Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"ShareName":"JSW","SellID":"Shaury Singh","BuyID":"Vedant Ere"});
+                // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
                 let buyOrder = this.dequeuefromBuyBook(shareIndex); 
                 this.sellBook[shareIndex][0].qty = qty;
                 console.log(`${JSON.stringify(this.sellBook[shareIndex][0])} matched to ${JSON.stringify(buyOrder)}`);
             } else if (qty == 0) {
-                await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,this.sellBook[shareIndex][0].qty,"JSW","Shaury Singh","Vedant Ere");
+                this.dbMatchedQueue.push({"value":this.sellBook[shareIndex][0].value,"qty":this.sellBook[shareIndex][0].qty,"ShareName":"JSW","SellID":"Shaury Singh","BuyID":"Vedant Ere"});
+                // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,this.sellBook[shareIndex][0].qty,"JSW","Shaury Singh","Vedant Ere");
                 let sellOrder = this.dequeuefromSellBook(shareIndex);
                 let buyOrder = this.dequeuefromBuyBook(shareIndex); 
                 console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
             } else {
-                await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
+                this.dbMatchedQueue.push({"value":this.sellBook[shareIndex][0].value,"qty":Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"ShareName":"JSW","SellID":"Shaury Singh","BuyID":"Vedant Ere"});
+                // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
                 let sellOrder = this.dequeuefromSellBook(shareIndex);
                 this.buyBook[shareIndex][0].qty = (qty*-1);
                 console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(this.buyBook[shareIndex][0])}`);
             }
         }
-        console.log(`Current Market Value is: ${JSON.stringify(this.fetchCurrentMarketValue(150.23,200.48,shareIndex))}`);
+        return this.dbMatchedQueue;
+        // console.log(`Current Market Value is: ${JSON.stringify(this.fetchCurrentMarketValue(150.23,200.48,shareIndex))}`);
     }
 
     showdbQueue() {
@@ -233,30 +240,72 @@ class Engine {
             console.log(JSON.stringify(this.dbOrderQueue[i]));
         }    
     }
+
+    showMatchedQueue(){
+        for (let i=0; i<this.dbMatchedQueue.length; i++){
+            console.log(JSON.stringify(this.dbMatchedQueue[i]));
+        }
+    }
+
+    async startDBMatchedOrderWorker(){
+        while (true){
+            if (this.dbMatchedQueue.length == 0){
+                await new Promise(resolve => setTimeout(resolve,10));
+                continue;
+            }
+            const trade = this.dbMatchedQueue.shift();
+            try{
+                await addMatchedOrderIntoDatabase(trade.value,trade.qty,trade.ShareName,trade.BuyID,trade.SellID);
+            } catch(err){
+                console.log("DB failed, pushing back to queue");
+                this.dbMatchedQueue.unshift(trade);
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+    }
+
+    async startDBPlaceOrderWorker(){
+        while (true){
+            if (this.dbOrderQueue.length == 0){
+                await new Promise(resolve => setTimeout(resolve,10));
+                continue;
+            }
+            const order = this.dbOrderQueue.shift();
+            try{
+                await addOrderIntoDatabase(order.type,order.value,order.qty,order.shareName,order.userID);
+            } catch(err){
+                console.log("Order Placement Failed, pushing back to queue");
+                this.dbOrderQueue.unshift(order);
+                await new Promise(resolve => setTimeout(resolve,10));
+            }
+        }
+    }
 }
 
 async function runEngine() {
     const engine = new Engine();
     const shareIndex = 0;
     engine.initializeShare(shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
-    await engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
-    await engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
-    await engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
-    await engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
     const sameTime = Date.now();
-    await engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
-    await engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
-    await engine.matchOrders(shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
+    engine.matchOrders(shareIndex);
     console.log("------------- SELL BOOK ---------------");
     console.log(engine.sellBook[shareIndex]);
     console.log("------------- BUY BOOK ----------------");
     console.log(engine.buyBook[shareIndex]);
     console.log("--------------DB Queue ----------------");
     engine.showdbQueue();
+    console.log("--------------Matched Order Queue------");
+    engine.showMatchedQueue();
 }
 runEngine();
