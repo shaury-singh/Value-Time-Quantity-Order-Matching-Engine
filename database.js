@@ -1,41 +1,40 @@
-import mysql from 'mysql2';
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const connection = mysql.createConnection({
-    host:"localhost",
-    user:"root",
-    password:process.env.DBPASS,
-    database:process.env.DBNAME
+const pool = mysql.createPool({
+    host: process.env.DBHOST || 'localhost',
+    user: process.env.DBUSER || 'root',
+    password: process.env.DBPASS,
+    database: process.env.DBNAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-connection.connect((err)=>{
-    if (err){
-        console.log(err);
-        return;
+export async function addOrderIntoDatabase(type, price, qty, shareName, userID) {
+    const query = `INSERT INTO orders (type, price, qty, shareName, userID) VALUES (?, ?, ?, ?, ?)`;
+    const values = [type, price, qty, shareName, userID];
+    try {
+        const [result] = await pool.execute(query, values);
+        // console.log('Added Successfully');
+        return result;
+    } catch (err) {
+        console.error('addOrderIntoDatabase error:', err);
+        throw err;
     }
-    console.log("Connected");
-});
+}
 
-export async function addOrderIntoDatabase(type,price,qty,shareName,userID){
-    const query = `Insert into orders (type, price, qty, shareName, userID) values (?, ?, ?, ?, ?)`;
-    const values = [type,price,qty,shareName,userID];
-    try{
-        connection.query(query, values, function(err,result){
-            if (err) throw err;
-            console.log("Added Sucessfully");
-        });
-    }catch(err){
-        console.log(err);
-    }
-};
-
-export async function addMatchedOrderIntoDatabase(price, qty, shareName, buyID, sellID){
-    const query = `Insert into MatchedOrders (matchedprice, qty, shareName, buyID, sellID) values (?, ?, ?, ?, ?)`;
+export async function addMatchedOrderIntoDatabase(price, qty, shareName, buyID, sellID) {
+    const query = `INSERT INTO MatchedOrders (matchedprice, qty, shareName, buyID, sellID) VALUES (?, ?, ?, ?, ?)`;
     const values = [price, qty, shareName, buyID, sellID];
-    connection.query(query,values,function(err,result){
-        if (err) throw err;
-        console.log("Matched Sucessfully");
-    })
+    try {
+        const [result] = await pool.execute(query, values);
+        // console.log('Matched Successfully');
+        return result;
+    } catch (err) {
+        console.error('addMatchedOrderIntoDatabase error:', err);
+        throw err;
+    }
 }
