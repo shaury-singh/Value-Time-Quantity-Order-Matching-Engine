@@ -326,19 +326,116 @@ export default class Engine {
     }
 
     cancelBuyOrder(orderID){
-        const shareIndex = this.orderHash[orderID]["shareIndex"];
-        let currIdx = this.orderHash[orderID]["orderIndex"];
-        this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][this.buyBook[shareIndex].length-1];
+        if (!this.orderHash[orderID]) return;
+        const shareIndex = this.orderHash[orderID].shareIndex;
+        let currIdx = this.orderHash[orderID].orderIndex;
+        const lastIdx = this.buyBook[shareIndex].length - 1;
+        if (currIdx === lastIdx){
+            this.buyBook[shareIndex].pop();
+            delete this.orderHash[orderID];
+            return;
+        }
+        const lastElement = this.buyBook[shareIndex][lastIdx];
+        this.buyBook[shareIndex][currIdx] = lastElement;
         this.buyBook[shareIndex].pop();
-        while (currIdx < this.buyBook[shareIndex].length-1 && currIdx > 0){
-            let parentIdx = Math.floor((currIdx-1)/2);
-            if (this.hasBuyPriority(shareIndex,parentIdx,currIdx) == parentIdx){
-                // bubble DOWN
-            } else {
-                // bubble UP
+        this.orderHash[lastElement.orderID].orderIndex = currIdx;
+        delete this.orderHash[orderID];
+        let parentIdx = Math.floor((currIdx - 1) / 2);
+        if (currIdx > 0 && this.hasBuyPriority(shareIndex, currIdx, parentIdx) === currIdx){
+            while (currIdx > 0){
+                parentIdx = Math.floor((currIdx - 1) / 2);
+                if (this.hasBuyPriority(shareIndex, currIdx, parentIdx) !== currIdx) break;
+                let currOrderID = this.buyBook[shareIndex][currIdx].orderID;
+                let parentOrderID = this.buyBook[shareIndex][parentIdx].orderID;
+                let temp = this.buyBook[shareIndex][currIdx];
+                this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][parentIdx];
+                this.buyBook[shareIndex][parentIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = parentIdx;
+                this.orderHash[parentOrderID].orderIndex = currIdx;
+                currIdx = parentIdx;
+            }
+        } else {
+            while (currIdx < this.buyBook[shareIndex].length){
+                let left = currIdx * 2 + 1;
+                let right = currIdx * 2 + 2;
+                let leftExists = left < this.buyBook[shareIndex].length;
+                let rightExists = right < this.buyBook[shareIndex].length;
+                if (!leftExists) break;
+                let swapIdx;
+                if (rightExists){
+                    let tempSwapIdx = this.hasBuyPriority(shareIndex, left, right);
+                    swapIdx = this.hasBuyPriority(shareIndex, tempSwapIdx, currIdx);
+                } else {
+                    swapIdx = this.hasBuyPriority(shareIndex, currIdx, left);
+                }
+                if (swapIdx === currIdx) break;
+                let currOrderID = this.buyBook[shareIndex][currIdx].orderID;
+                let swapOrderID = this.buyBook[shareIndex][swapIdx].orderID;
+                let temp = this.buyBook[shareIndex][currIdx];
+                this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][swapIdx];
+                this.buyBook[shareIndex][swapIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = swapIdx;
+                this.orderHash[swapOrderID].orderIndex = currIdx;
+                currIdx = swapIdx;
             }
         }
     }
+
+    cancelSellOrder(orderID){
+        if (!this.orderHash[orderID]) return;
+        const shareIndex = this.orderHash[orderID].shareIndex;
+        let currIdx = this.orderHash[orderID].orderIndex;
+        const lastIdx = this.sellBook[shareIndex].length - 1;
+        if (currIdx === lastIdx){
+            this.sellBook[shareIndex].pop();
+            delete this.orderHash[orderID];
+            return;
+        }
+        const lastElement = this.sellBook[shareIndex][lastIdx];
+        this.sellBook[shareIndex][currIdx] = lastElement;
+        this.sellBook[shareIndex].pop();
+        this.orderHash[lastElement.orderID].orderIndex = currIdx;
+        delete this.orderHash[orderID];
+        let parentIdx = Math.floor((currIdx - 1) / 2);
+        if (currIdx > 0 && this.hasSellPriority(shareIndex, currIdx, parentIdx) === currIdx){
+            while (currIdx > 0){
+                parentIdx = Math.floor((currIdx - 1) / 2);
+                if (this.hasSellPriority(shareIndex, currIdx, parentIdx) !== currIdx) break;
+                let currOrderID = this.sellBook[shareIndex][currIdx].orderID;
+                let parentOrderID = this.sellBook[shareIndex][parentIdx].orderID;
+                let temp = this.sellBook[shareIndex][currIdx];
+                this.sellBook[shareIndex][currIdx] = this.sellBook[shareIndex][parentIdx];
+                this.sellBook[shareIndex][parentIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = parentIdx;
+                this.orderHash[parentOrderID].orderIndex = currIdx;
+                currIdx = parentIdx;
+            }
+        } else {
+            while (currIdx < this.sellBook[shareIndex].length){
+                let left = currIdx * 2 + 1;
+                let right = currIdx * 2 + 2;
+                let leftExists = left < this.sellBook[shareIndex].length;
+                let rightExists = right < this.sellBook[shareIndex].length;
+                if (!leftExists) break;
+                let swapIdx;
+                if (rightExists){
+                    let tempSwapIdx = this.hasSellPriority(shareIndex, left, right);
+                    swapIdx = this.hasSellPriority(shareIndex, tempSwapIdx, currIdx);
+                } else {
+                    swapIdx = this.hasSellPriority(shareIndex, currIdx, left);
+                }
+                if (swapIdx === currIdx) break;
+                let currOrderID = this.sellBook[shareIndex][currIdx].orderID;
+                let swapOrderID = this.sellBook[shareIndex][swapIdx].orderID;
+                let temp = this.sellBook[shareIndex][currIdx];
+                this.sellBook[shareIndex][currIdx] = this.sellBook[shareIndex][swapIdx];
+                this.sellBook[shareIndex][swapIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = swapIdx;
+                this.orderHash[swapOrderID].orderIndex = currIdx;
+                currIdx = swapIdx;
+            }
+        }
+    }   
 }
 
 async function runEngine() {
