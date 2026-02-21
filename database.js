@@ -18,7 +18,7 @@ export async function addOrderIntoDatabase(type, price, qty, shareName, userID) 
     const values = [type, price, qty, shareName, userID];
     try {
         const [result] = await pool.execute(query, values);
-        // console.log('Added Successfully');
+        console.log('Added Successfully');
         return result;
     } catch (err) {
         console.error('addOrderIntoDatabase error:', err);
@@ -31,7 +31,7 @@ export async function addMatchedOrderIntoDatabase(price, qty, shareName, buyID, 
     const values = [price, qty, shareName, buyID, sellID];
     try {
         const [result] = await pool.execute(query, values);
-        // console.log('Matched Successfully');
+        console.log('Matched Successfully');
         return result;
     } catch (err) {
         console.error('addMatchedOrderIntoDatabase error:', err);

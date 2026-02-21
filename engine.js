@@ -144,8 +144,13 @@ export default class Engine {
         if (this.sellBook[shareIndex].length === 0) return null;
         let orderObj = this.sellBook[shareIndex][0];
         let lastElement = this.sellBook[shareIndex].pop();
-        if (this.sellBook[shareIndex].length === 0) return orderObj;
+        if (this.sellBook[shareIndex].length === 0) {
+            delete this.orderHash[orderObj.orderID];
+            return orderObj;
+        }
         this.sellBook[shareIndex][0] = lastElement;
+        this.orderHash[lastElement.orderID].orderIndex = 0;
+        delete this.orderHash[orderObj.orderID];
         let currIdx = 0;
         while (currIdx < this.sellBook[shareIndex].length - 1) {
             let left = currIdx * 2 + 1;
@@ -156,15 +161,24 @@ export default class Engine {
                 let tempSwapIdx = this.hasSellPriority(shareIndex, left, right);
                 let swapIdx = this.hasSellPriority(shareIndex, tempSwapIdx, currIdx);
                 if (swapIdx === currIdx) break;
+                let currOrderID = this.sellBook[shareIndex][currIdx].orderID;
+                let swapOrderID = this.sellBook[shareIndex][swapIdx].orderID;
                 let temp = this.sellBook[shareIndex][currIdx];
                 this.sellBook[shareIndex][currIdx] = this.sellBook[shareIndex][swapIdx];
                 this.sellBook[shareIndex][swapIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = swapIdx;
+                this.orderHash[swapOrderID].orderIndex = currIdx;
                 currIdx = swapIdx;
             } else if (leftExists) {
                 if (this.hasSellPriority(shareIndex, currIdx, left) === left) {
+                    let currOrderID = this.sellBook[shareIndex][currIdx].orderID;
+                    let swapOrderID = this.sellBook[shareIndex][left].orderID;
                     let temp = this.sellBook[shareIndex][currIdx];
                     this.sellBook[shareIndex][currIdx] = this.sellBook[shareIndex][left];
                     this.sellBook[shareIndex][left] = temp;
+                    this.orderHash[currOrderID].orderIndex = left;
+                    this.orderHash[swapOrderID].orderIndex = currIdx;
+                    currIdx = left;
                 }
                 break;
             } else {
@@ -179,8 +193,13 @@ export default class Engine {
         if (this.buyBook[shareIndex].length === 0) return null;
         let orderObj = this.buyBook[shareIndex][0];
         let lastElement = this.buyBook[shareIndex].pop();
-        if (this.buyBook[shareIndex].length === 0) return orderObj;
+        if (this.buyBook[shareIndex].length === 0) {
+            delete this.orderHash[orderObj.orderID];
+            return orderObj;
+        }
         this.buyBook[shareIndex][0] = lastElement;
+        this.orderHash[lastElement.orderID].orderIndex = 0;
+        delete this.orderHash[orderObj.orderID];
         let currIdx = 0;
         while (currIdx < this.buyBook[shareIndex].length - 1) {
             let left = currIdx * 2 + 1;
@@ -191,15 +210,24 @@ export default class Engine {
                 let tempSwapIdx = this.hasBuyPriority(shareIndex, left, right);
                 let swapIdx = this.hasBuyPriority(shareIndex, tempSwapIdx, currIdx);
                 if (swapIdx === currIdx) break;
+                let currOrderID = this.buyBook[shareIndex][currIdx].orderID;
+                let swapOrderID = this.buyBook[shareIndex][swapIdx].orderID;
                 let temp = this.buyBook[shareIndex][currIdx];
                 this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][swapIdx];
                 this.buyBook[shareIndex][swapIdx] = temp;
+                this.orderHash[currOrderID].orderIndex = swapIdx;
+                this.orderHash[swapOrderID].orderIndex = currIdx;
                 currIdx = swapIdx;
             } else if (leftExists) {
                 if (this.hasBuyPriority(shareIndex, currIdx, left) === left) {
+                    let currOrderID = this.buyBook[shareIndex][currIdx].orderID;
+                    let swapOrderID = this.buyBook[shareIndex][left].orderID;
                     let temp = this.buyBook[shareIndex][currIdx];
                     this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][left];
                     this.buyBook[shareIndex][left] = temp;
+                    this.orderHash[currOrderID].orderIndex = left;
+                    this.orderHash[swapOrderID].orderIndex = currIdx;
+                    currIdx = left;
                 }
                 break;
             } else {
@@ -313,30 +341,32 @@ export default class Engine {
     }
 }
 
-// async function runEngine() {
-//     const engine = new Engine();
-//     const shareIndex = 0;
-//     engine.initializeShare(shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
-//     engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
-//     engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
-//     engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
-//     engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
-//     const sameTime = Date.now();
-//     engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
-//     engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
-//     engine.matchOrders(shareIndex);
-//     console.log("------------- SELL BOOK ---------------");
-//     console.log(engine.sellBook[shareIndex]);
-//     console.log("------------- BUY BOOK ----------------");
-//     console.log(engine.buyBook[shareIndex]);
-//     console.log("--------------DB Queue ----------------");
-//     engine.showdbQueue();
-//     console.log("--------------Matched Order Queue------");
-//     engine.showMatchedQueue();
-// }
-// runEngine();
+async function runEngine() {
+    const engine = new Engine();
+    const shareIndex = 0;
+    engine.initializeShare(shareIndex);
+    engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
+    engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
+    const sameTime = Date.now();
+    engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
+    engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
+    engine.matchOrders(shareIndex);
+    console.log("------------- SELL BOOK ---------------");
+    console.log(engine.sellBook[shareIndex]);
+    console.log("------------- BUY BOOK ----------------");
+    console.log(engine.buyBook[shareIndex]);
+    console.log("--------------DB Queue ----------------");
+    engine.showdbQueue();
+    console.log("--------------Matched Order Queue------");
+    engine.showMatchedQueue();
+    console.log("--------------Order Hash---------------");
+    console.log(engine.orderHash);
+}
+runEngine();
