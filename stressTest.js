@@ -34,4 +34,4 @@ async function stressTest(totalOrders) {
     console.log(`Avg latency per order: ${durationMs / totalOrders} ms`);
 }
 
-stressTest(100000);
+stressTest(1000000);
