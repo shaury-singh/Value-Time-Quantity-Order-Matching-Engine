@@ -62,29 +62,37 @@ export default class Engine {
         if (currIdx === this.buyBook[shareIndex].length - 1) {
             this.buyBook[shareIndex].push({ shareName, value, time, qty, orderID });
             currIdx = this.buyBook[shareIndex].length - 1;
+            this.orderHash[orderID] = {"shareIndex":shareIndex,"orderIndex":currIdx};
             this.dbOrderQueue.push({"type":"buy","value":value,"qty":qty,"shareName":shareName,"shareIndex":shareIndex,"userID":"Shaury Singh"});
             // await addOrderIntoDatabase("buy", value, qty, shareName, "Vedant Ere");
         }
         let parentIdx = Math.floor((currIdx - 1) / 2);
         if (currIdx > 0) {
             if (this.buyBook[shareIndex][currIdx].value > this.buyBook[shareIndex][parentIdx].value) {
+                let parentOrderID = this.buyBook[shareIndex][parentIdx].orderID;
                 let temp = this.buyBook[shareIndex][currIdx];
                 this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][parentIdx];
                 this.buyBook[shareIndex][parentIdx] = temp;
+                this.orderHash[orderID]["orderIndex"] = parentIdx;
+                this.orderHash[parentOrderID]["orderIndex"] = currIdx;
                 return this.enqueueBuyOrder(shareName, value, qty, time, parentIdx, orderID, shareIndex);
             } else if (this.buyBook[shareIndex][currIdx].value === this.buyBook[shareIndex][parentIdx].value) {
                 if (this.buyBook[shareIndex][currIdx].time < this.buyBook[shareIndex][parentIdx].time) {
+                    let parentOrderID = this.buyBook[shareIndex][parentIdx].orderID;
                     let temp = this.buyBook[shareIndex][currIdx];
                     this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][parentIdx];
                     this.buyBook[shareIndex][parentIdx] = temp;
+                    this.orderHash[orderID]["orderIndex"] = parentIdx;
+                    this.orderHash[parentOrderID]["orderIndex"] = currIdx;
                     return this.enqueueBuyOrder(shareName, value, qty, time, parentIdx, orderID, shareIndex);
-                } else if (
-                    this.buyBook[shareIndex][currIdx].time === this.buyBook[shareIndex][parentIdx].time &&
-                    this.buyBook[shareIndex][currIdx].qty > this.buyBook[shareIndex][parentIdx].qty
+                } else if (this.buyBook[shareIndex][currIdx].time === this.buyBook[shareIndex][parentIdx].time && this.buyBook[shareIndex][currIdx].qty > this.buyBook[shareIndex][parentIdx].qty
                 ) {
+                    let parentOrderID = this.buyBook[shareIndex][parentIdx].orderID;
                     let temp = this.buyBook[shareIndex][currIdx];
                     this.buyBook[shareIndex][currIdx] = this.buyBook[shareIndex][parentIdx];
                     this.buyBook[shareIndex][parentIdx] = temp;
+                    this.orderHash[orderID]["orderIndex"] = parentIdx;
+                    this.orderHash[parentOrderID]["orderIndex"] = currIdx;
                     return this.enqueueBuyOrder(shareName, value, qty, time, parentIdx, orderID, shareIndex);
                 }
             }
