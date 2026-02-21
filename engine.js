@@ -260,19 +260,19 @@ export default class Engine {
                 // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
                 let buyOrder = this.dequeuefromBuyBook(shareIndex); 
                 this.sellBook[shareIndex][0].qty = qty;
-                console.log(`${JSON.stringify(this.sellBook[shareIndex][0])} matched to ${JSON.stringify(buyOrder)}`);
+                // console.log(`${JSON.stringify(this.sellBook[shareIndex][0])} matched to ${JSON.stringify(buyOrder)}`);
             } else if (qty == 0) {
                 this.dbMatchedQueue.push({"value":this.sellBook[shareIndex][0].value,"qty":this.sellBook[shareIndex][0].qty,"ShareName":"JSW","SellID":"Shaury Singh","BuyID":"Vedant Ere"});
                 // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,this.sellBook[shareIndex][0].qty,"JSW","Shaury Singh","Vedant Ere");
                 let sellOrder = this.dequeuefromSellBook(shareIndex);
                 let buyOrder = this.dequeuefromBuyBook(shareIndex); 
-                console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
+                // console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(buyOrder)}`);
             } else {
                 this.dbMatchedQueue.push({"value":this.sellBook[shareIndex][0].value,"qty":Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"ShareName":"JSW","SellID":"Shaury Singh","BuyID":"Vedant Ere"});
                 // await addMatchedOrderIntoDatabase(this.sellBook[shareIndex][0].value,Math.min(this.sellBook[shareIndex][0].qty,this.buyBook[shareIndex][0].qty),"JSW","Shaury Singh","Vedant Ere");
                 let sellOrder = this.dequeuefromSellBook(shareIndex);
                 this.buyBook[shareIndex][0].qty = (qty*-1);
-                console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(this.buyBook[shareIndex][0])}`);
+                // console.log(`${JSON.stringify(sellOrder)} matched to ${JSON.stringify(this.buyBook[shareIndex][0])}`);
             }
         }
         return this.dbMatchedQueue;
@@ -438,32 +438,32 @@ export default class Engine {
     }   
 }
 
-async function runEngine() {
-    const engine = new Engine();
-    const shareIndex = 0;
-    engine.initializeShare(shareIndex);
-    engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
-    engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
-    engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
-    engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
-    engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
-    engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
-    engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
-    engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
-    engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
-    const sameTime = Date.now();
-    engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
-    engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
-    engine.matchOrders(shareIndex);
-    console.log("------------- SELL BOOK ---------------");
-    console.log(engine.sellBook[shareIndex]);
-    console.log("------------- BUY BOOK ----------------");
-    console.log(engine.buyBook[shareIndex]);
-    console.log("--------------DB Queue ----------------");
-    engine.showdbQueue();
-    console.log("--------------Matched Order Queue------");
-    engine.showMatchedQueue();
-    console.log("--------------Order Hash---------------");
-    console.log(engine.orderHash);
-}
-runEngine();
+// async function runEngine() {
+//     const engine = new Engine();
+//     const shareIndex = 0;
+//     engine.initializeShare(shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.55, 5, Date.now(), engine.sellBook[shareIndex].length - 1, 1, shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.70, 3, Date.now(), engine.sellBook[shareIndex].length - 1, 12, shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.35, 10, Date.now(), engine.sellBook[shareIndex].length - 1, 13, shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.15, 13, Date.now(), engine.sellBook[shareIndex].length - 1, 14, shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.85, 28, Date.now(), engine.sellBook[shareIndex].length - 1, 15, shareIndex);
+//     engine.enqueueBuyOrder("JSW", 148.35, 1, Date.now(), engine.buyBook[shareIndex].length - 1, 16, shareIndex);
+//     engine.enqueueBuyOrder("JSW", 148.40, 3, Date.now(), engine.buyBook[shareIndex].length - 1, 17, shareIndex);
+//     engine.enqueueBuyOrder("JSW", 148.38, 50, Date.now(), engine.buyBook[shareIndex].length - 1, 18, shareIndex);
+//     engine.enqueueSellOrder("JSW", 148.15, 2, Date.now(), engine.sellBook[shareIndex].length - 1, 19, shareIndex);
+//     const sameTime = Date.now();
+//     engine.enqueueBuyOrder("JSW", 148.40, 10, sameTime, engine.buyBook[shareIndex].length - 1, 20, shareIndex);
+//     engine.enqueueBuyOrder("JSW", 148.40, 2, sameTime, engine.buyBook[shareIndex].length - 1, 21, shareIndex);
+//     engine.matchOrders(shareIndex);
+//     console.log("------------- SELL BOOK ---------------");
+//     console.log(engine.sellBook[shareIndex]);
+//     console.log("------------- BUY BOOK ----------------");
+//     console.log(engine.buyBook[shareIndex]);
+//     console.log("--------------DB Queue ----------------");
+//     engine.showdbQueue();
+//     console.log("--------------Matched Order Queue------");
+//     engine.showMatchedQueue();
+//     console.log("--------------Order Hash---------------");
+//     console.log(engine.orderHash);
+// }
+// runEngine();
